@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -68,7 +70,7 @@ func execCommand(c *cli.Context) error {
 
 	// Check if Tor proxy is running
 	if !isTorProxyRunning(proxy) {
-		return fmt.Errorf("Tor proxy is not running on %s", proxy)
+		return fmt.Errorf("tor proxy is not running on %s", proxy)
 	}
 
 	// Set the proxy environment variables
@@ -122,8 +124,20 @@ func execCommand(c *cli.Context) error {
 }
 
 func isTorProxyRunning(proxy string) bool {
+	// Parse the proxy URL to extract the host and port
+	proxyURL, err := url.Parse(proxy)
+	if err != nil {
+		fmt.Printf("Invalid proxy URL: %v\n", err)
+		return false
+	}
+
+	hostPort := proxyURL.Host
+	if !strings.Contains(hostPort, ":") {
+		hostPort += ":9050" // Default port for Tor SOCKS5 proxy
+	}
+
 	timeout := 2 * time.Second
-	conn, err := net.DialTimeout("tcp", proxy, timeout)
+	conn, err := net.DialTimeout("tcp", hostPort, timeout)
 	if err != nil {
 		return false
 	}
