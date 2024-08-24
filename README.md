@@ -1,5 +1,9 @@
 # go-toralizer
 
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Tor-logo-2011-flat.svg/1200px-Tor-logo-2011-flat.svg.png" alt="Tor Logo" width="200" height="100"/>
+
+---
+
 `go-toralizer` is a CLI tool to run commands through the Tor network. It ensures your commands are executed with the anonymity provided by Tor.
 
 ## Installation
