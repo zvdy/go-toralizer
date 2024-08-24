@@ -34,7 +34,22 @@ jobs:
       run: sudo pkill -f tor || true
 
     - name: Start Tor in the background
-      run: nohup tor &
+      run: |
+        tor > tor.log 2>&1 &
+        disown
+
+    - name: Wait for Tor to be ready
+      run: |
+        for i in {1..30}; do
+          if grep -q "Bootstrapped 100% (done): Done" tor.log; then
+            echo "Tor is ready"
+            exit 0
+          fi
+          echo "Waiting for Tor to be ready..."
+          sleep 2
+        done
+        echo "Tor did not start in time"
+        exit 1
 
     - name: Install dependencies
       run: go mod download
