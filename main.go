@@ -26,6 +26,28 @@ func main() {
 						Usage:    "Command to execute",
 						Required: true,
 					},
+					&cli.BoolFlag{
+						Name:    "verbose",
+						Aliases: []string{"v"},
+						Usage:   "Enable verbose output",
+					},
+					&cli.DurationFlag{
+						Name:    "timeout",
+						Aliases: []string{"t"},
+						Usage:   "Specify a timeout for the command execution",
+						Value:   30 * time.Second,
+					},
+					&cli.StringFlag{
+						Name:    "proxy",
+						Aliases: []string{"p"},
+						Usage:   "Specify a custom proxy address",
+						Value:   "socks5://127.0.0.1:9050",
+					},
+					&cli.StringFlag{
+						Name:    "output",
+						Aliases: []string{"o"},
+						Usage:   "Redirect command output to a file",
+					},
 				},
 			},
 		},
@@ -39,19 +61,23 @@ func main() {
 
 func execCommand(c *cli.Context) error {
 	command := c.String("command")
+	verbose := c.Bool("verbose")
+	timeout := c.Duration("timeout")
+	proxy := c.String("proxy")
+	outputFile := c.String("output")
 
 	// Check if Tor proxy is running
-	if !isTorProxyRunning() {
-		return fmt.Errorf("Tor proxy is not running on 127.0.0.1:9050")
+	if !isTorProxyRunning(proxy) {
+		return fmt.Errorf("Tor proxy is not running on %s", proxy)
 	}
 
 	// Set the proxy environment variables
-	os.Setenv("HTTP_PROXY", "socks5://127.0.0.1:9050")
-	os.Setenv("HTTPS_PROXY", "socks5://127.0.0.1:9050")
-	os.Setenv("ALL_PROXY", "socks5://127.0.0.1:9050")
+	os.Setenv("HTTP_PROXY", proxy)
+	os.Setenv("HTTPS_PROXY", proxy)
+	os.Setenv("ALL_PROXY", proxy)
 
 	// Verify the IP address
-	if err := verifyTorConnection(); err != nil {
+	if err := verifyTorConnection(proxy); err != nil {
 		return err
 	}
 
@@ -60,17 +86,44 @@ func execCommand(c *cli.Context) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	if outputFile != "" {
+		file, err := os.Create(outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %v", err)
+		}
+		defer file.Close()
+		cmd.Stdout = file
+		cmd.Stderr = file
+	}
+
+	if verbose {
+		fmt.Printf("Executing command: %s\n", command)
+	}
+
+	err := cmd.Start()
 	if err != nil {
-		return fmt.Errorf("failed to execute command: %v", err)
+		return fmt.Errorf("failed to start command: %v", err)
+	}
+
+	done := make(chan error)
+	go func() { done <- cmd.Wait() }()
+
+	select {
+	case <-time.After(timeout):
+		cmd.Process.Kill()
+		return fmt.Errorf("command timed out")
+	case err := <-done:
+		if err != nil {
+			return fmt.Errorf("command failed: %v", err)
+		}
 	}
 
 	return nil
 }
 
-func isTorProxyRunning() bool {
+func isTorProxyRunning(proxy string) bool {
 	timeout := 2 * time.Second
-	conn, err := net.DialTimeout("tcp", "127.0.0.1:9050", timeout)
+	conn, err := net.DialTimeout("tcp", proxy, timeout)
 	if err != nil {
 		return false
 	}
@@ -79,8 +132,8 @@ func isTorProxyRunning() bool {
 	return true
 }
 
-func verifyTorConnection() error {
-	cmd := exec.Command("curl", "--socks5", "127.0.0.1:9050", "https://check.torproject.org/api/ip")
+func verifyTorConnection(proxy string) error {
+	cmd := exec.Command("curl", "--socks5", proxy, "https://check.torproject.org/api/ip")
 	output, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to verify Tor connection: %v", err)
