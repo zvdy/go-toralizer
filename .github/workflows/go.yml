@@ -10,6 +10,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v4
 
@@ -35,9 +36,6 @@ jobs:
 
     - name: Start Tor in the background
       run: nohup tor &
-
-    - name: Wait for Tor to initialize
-      run: sleep 30
 
     - name: Install dependencies
       run: go mod download
