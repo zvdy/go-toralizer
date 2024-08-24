@@ -1,117 +1,104 @@
-# Go-Toralizer
+# go-toralizer
 
-Go-Toralizer is a CLI tool that allows you to execute commands through the Tor network. It ensures that your commands are routed through the Tor proxy, providing anonymity and privacy.
-
-## Features
-
-- Check if the Tor proxy is running.
-- Verify the IP address to ensure the connection is routed through the Tor network.
-- Execute specified commands through the Tor proxy.
-
-## Prerequisites
-
-- Go (Golang) installed on your machine.
-- Tor installed and running on your machine.
+`go-toralizer` is a CLI tool to run commands through the Tor network. It ensures your commands are executed with the anonymity provided by Tor.
 
 ## Installation
 
-1. **Clone the repository**:
-   ```sh
-   git clone https://github.com/zvdy/go-toralizer.git
-   cd go-toralizer
-   ```
+1. **Clone the repository:**
+    ```sh
+    git clone https://github.com/zvdy/go-toralizer.git
+    cd go-toralizer
+    ```
 
-2. **Build the application**:
-   ```sh
-   go build -o go-toralizer
-   ```
+2. **Build the project:**
+    ```sh
+    go build -o go-toralizer main.go
+    ```
+
+3. **Move the binary to a directory in your PATH:**
+    ```sh
+    sudo mv go-toralizer /usr/local/bin/
+    ```
+
+## Alias Creation
+
+To simplify the usage of `go-toralizer`, you can create an alias in your shell configuration file (e.g., `.bashrc`, `.zshrc`).
+
+1. **Open your shell configuration file:**
+    ```sh
+    nano ~/.bashrc  # or ~/.zshrc for zsh users
+    ```
+
+2. **Add the following line to create an alias:**
+    ```sh
+    alias toralizer='go-toralizer'
+    ```
+      
+      - You can also add the following alias if you want default cli and simpler `cmd` concatenation 
+         ```sh
+         toralizer() {
+            /usr/local/bin/go-toralizer exec --command "$*"
+         }
+
+         # And then you will be able to:
+         toralzier ping website.com
+         ```
+
+3. **Reload your shell configuration:**
+    ```sh
+    source ~/.bashrc  # or ~/.zshrc for zsh users
+    ```
 
 ## Usage
 
-1. **Ensure Tor is running**:
-   ```sh
-   tor
-   ```
+### Basic Command Execution
 
-2. **Execute a command through Tor**:
-   ```sh
-   ./go-toralizer exec --command "curl http://httpbin.org/ip"
-   ```
-
-   This command will route the `curl` request through the Tor network and display the IP address from which the request is made.
-
-## Example Output
-
-When you run the command, you should see output similar to the following:
+To execute a command through Tor, use the `exec` command with the `--command` flag:
 
 ```sh
-Tor proxy is running
-Tor verification output: {"IsTor":true,"IP":"185.220.101.1"}
-{
-  "origin": "185.220.101.1"
-}
+toralizer exec --command "curl http://example.com"
 ```
 
-## Setup
+### Verbose Output
 
-1. **Build the application**:
-   ```sh
-   go build -o go-toralizer
-   ```
+Enable verbose output to see more details about the execution:
 
-2. **Move the binary to a directory in your PATH** (optional but recommended for easier access):
-   ```sh
-   sudo mv go-toralizer /usr/local/bin/
-   ```
+```sh
+toralizer exec --command "curl http://example.com" --verbose
+```
 
-3. **Create an alias** (optional, for convenience):
-   Add the following line to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.):
-   ```sh
-   alias toralizer='/usr/local/bin/go-toralizer exec --command'
-   ```
+### Specify Timeout
 
-   Then, reload your shell configuration:
-   ```sh
-   source ~/.bashrc  # or source ~/.zshrc
-   ```
+Set a custom timeout for the command execution:
 
-4. **Use the tool**:
-   You can now use the `go-toralizer` to run any command through the Tor network. Here are some examples:
+```sh
+toralizer exec --command "curl http://example.com" --timeout 60s
+```
 
-   - **Without alias**:
-     ```sh
-     ./go-toralizer exec --command "ping -c 4 website.com"
-     ./go-toralizer exec --command "curl http://website.com"
-     ./go-toralizer exec --command "wget http://website.com"
-     ```
+### Custom Proxy Address
 
-   - **With alias**:
-     ```sh
-     toralizer "ping -c 4 website.com"
-     toralizer "curl http://website.com"
-     toralizer "wget http://website.com"
-     ```
+Use a custom proxy address instead of the default `socks5://127.0.0.1:9050`:
 
-### Example Usage
+```sh
+toralizer exec --command "curl http://example.com" --proxy "socks5://127.0.0.1:9150"
+```
 
-- **Ping a website**:
-  ```sh
-  toralizer "ping -c 4 website.com"
-  ```
+### Redirect Output to a File
 
-- **Curl a website**:
-  ```sh
-  toralizer "curl http://website.com"
-  ```
+Redirect the command output to a file:
 
-- **Download a file using wget**:
-  ```sh
-  toralizer "wget http://website.com/file.zip"
-  ```
+```sh
+toralizer exec --command "curl http://example.com" --output output.txt
+```
 
-This setup ensures that any command you run through `toralizer` will use the Tor network for its TCP connections. Make sure Tor is running on your machine and listening on port 9050. You can start Tor with the command `tor` if it's installed.
+## Example
+
+```sh
+toralizer exec --command "curl http://example.com" --verbose --timeout 45s --proxy "socks5://127.0.0.1:9150" --output result.txt
+```
+
+This command will execute `curl http://example.com` through the Tor network with verbose output, a timeout of 45 seconds, using a custom proxy address, and redirect the output to `result.txt`.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
+This project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file for details.
