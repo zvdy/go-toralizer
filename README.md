@@ -1,5 +1,5 @@
 # go-toralizer
-
+<img src="https://adrianalonso.es/wp-content/uploads/2018/06/go-lenguaje-programacion.png" alt="Tor Logo" width="200" height="100"/>
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Tor-logo-2011-flat.svg/1200px-Tor-logo-2011-flat.svg.png" alt="Tor Logo" width="200" height="100"/>
 
 ---
