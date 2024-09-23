@@ -1,4 +1,4 @@
-module go-toralizer
+module github.com/zvdy/go-toralizer
 
 go 1.23.0
 
