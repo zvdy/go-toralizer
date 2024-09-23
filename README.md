@@ -1,5 +1,6 @@
 # go-toralizer
 [![Tor](https://img.shields.io/badge/Tor-7D4698?logo=Tor-Browser&logoColor=white)](#) [![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?&logo=go&logoColor=white)](#)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zvdy/go-toralizer)](https://goreportcard.com/report/github.com/zvdy/go-toralizer)
 
 
 `go-toralizer` is a CLI tool to run commands through the Tor network. It ensures your commands are executed with the anonymity provided by Tor.
