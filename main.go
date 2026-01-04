@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -28,6 +29,7 @@ func execCommand(c *cli.Context, isTorProxyRunning func(string) bool, verifyTorC
 	command := c.String("command")
 	timeout := c.Duration("timeout")
 	proxy := c.String("proxy")
+	outputFile := c.String("output")
 
 	if !isTorProxyRunning(proxy) {
 		return fmt.Errorf("tor proxy is not running on %s", proxy)
@@ -37,22 +39,46 @@ func execCommand(c *cli.Context, isTorProxyRunning func(string) bool, verifyTorC
 		return err
 	}
 
-	cmd := exec.Command("sh", "-c", command)
+	ctx := context.Background()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	cmd.Env = os.Environ()
 
-	if timeout > 0 {
-		timer := time.AfterFunc(timeout, func() {
-			cmd.Process.Kill()
-		})
-		defer timer.Stop()
+	if outputFile != "" {
+		output, err := cmd.CombinedOutput()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("command timed out after %v", timeout)
+		}
+
+		if err != nil {
+			return fmt.Errorf("command execution failed: %w", err)
+		}
+
+		if err := os.WriteFile(outputFile, output, 0644); err != nil {
+			return fmt.Errorf("failed to write output to file: %w", err)
+		}
+		fmt.Printf("Output written to: %s\n", outputFile)
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("command timed out after %v", timeout)
+		}
+
+		if err != nil {
+			return fmt.Errorf("command execution failed: %w", err)
+		}
 	}
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("command execution failed: %w", err)
-	}
-
-	fmt.Println(string(output))
 	return nil
 }
 

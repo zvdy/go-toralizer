@@ -36,7 +36,7 @@ func TestExecCommand(t *testing.T) {
 			name:          "Command execution timeout",
 			args:          []string{"go-toralizer", "exec", "--command", "sleep 2", "--timeout", "1s"},
 			isTorRunning:  true,
-			expectedError: "command execution failed: signal: killed",
+			expectedError: "command timed out after",
 		},
 		{
 			name:          "Successful command execution",
