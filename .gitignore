@@ -1,4 +1,15 @@
+# Build output
+/bin/
+/dist/
+/go-toralizer
+/go-toralizer.exe
+
+# Test and coverage output
+coverage.out
+coverage.html
+*.test
+
+# Local scratch
 server*
-go.sum
-go-toralizer
 act
+.env
