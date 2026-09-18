@@ -1,0 +1,64 @@
+version: 2
+
+project_name: go-toralizer
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: go-toralizer
+    main: ./cmd/go-toralizer
+    binary: go-toralizer
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/zvdy/go-toralizer/internal/buildinfo.version={{ .Version }}
+      - -X github.com/zvdy/go-toralizer/internal/buildinfo.commit={{ .FullCommit }}
+      - -X github.com/zvdy/go-toralizer/internal/buildinfo.date={{ .CommitDate }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^feat(\(.+\))?!?:'
+      order: 0
+    - title: Fixes
+      regexp: '^fix(\(.+\))?!?:'
+      order: 1
+    - title: Other
+      order: 99
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+
+release:
+  draft: false
+  prerelease: auto

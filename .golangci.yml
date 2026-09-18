@@ -1,0 +1,113 @@
+# golangci-lint configuration.
+# Run locally with `make lint` (or `golangci-lint run`).
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - asasalint       # slices passed as a single variadic any
+    - asciicheck      # non-ASCII identifiers
+    - bidichk         # dangerous bidirectional unicode
+    - bodyclose       # unclosed HTTP response bodies
+    - contextcheck    # functions dropping an inherited context
+    - copyloopvar     # redundant loop-variable copies
+    - durationcheck   # multiplied durations
+    - errorlint       # error comparisons that break wrapping
+    - exhaustive      # unhandled enum cases in switches
+    - gocheckcompilerdirectives
+    - gochecknoinits  # init() hides ordering dependencies
+    - goconst         # repeated string literals
+    - gocritic        # assorted correctness and style diagnostics
+    - gocyclo         # overly branchy functions
+    - godot           # comments ending in a period
+    - gosec           # common security mistakes
+    - err113          # dynamic errors that cannot be matched with errors.Is
+    - misspell
+    - nakedret
+    - nilerr          # returning nil after a non-nil error
+    - noctx           # HTTP requests without a context
+    - nolintlint      # unexplained or unused nolint directives
+    - perfsprint      # fmt calls with cheaper equivalents
+    - prealloc
+    - predeclared     # shadowing predeclared identifiers
+    - revive
+    - rowserrcheck
+    - sloglint
+    - testifylint
+    - thelper         # test helpers missing t.Helper()
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      # Assigning to _ is how this codebase records a deliberately ignored
+      # error, so flagging it would only add noise.
+      check-blank: false
+    exhaustive:
+      default-signifies-exhaustive: true
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+    gocyclo:
+      min-complexity: 20
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: indent-error-flow
+        - name: errorf
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: var-declaration
+        - name: unreachable-code
+        - name: redefines-builtin-id
+
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      # Test code may build dynamic errors freely and is allowed to be longer.
+      - path: _test\.go
+        linters:
+          - err113
+          - gocyclo
+          - goconst
+          - gosec
+          - noctx
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/zvdy/go-toralizer
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a capability go-toralizer does not have yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation you are in, not only the feature you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would it look like?
+      description: Sketch the flags, output or behaviour you have in mind.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Other tools or workarounds, and why they fall short.
