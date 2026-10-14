@@ -1,9 +1,27 @@
-# go-toralizer
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+    <img src="assets/logo.png" alt="go-toralizer" width="420">
+  </picture>
+</p>
 
-[![CI](https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml/badge.svg)](https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/zvdy/go-toralizer)](https://goreportcard.com/report/github.com/zvdy/go-toralizer)
+<p align="center">
+  Run any command through Tor.
+</p>
 
-`go-toralizer` runs a command with its network traffic routed through a local Tor SOCKS proxy.
+<p align="center">
+  <a href="https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml"><img src="https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://pkg.go.dev/github.com/zvdy/go-toralizer"><img src="https://pkg.go.dev/badge/github.com/zvdy/go-toralizer.svg" alt="Go Reference"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License"></a>
+</p>
+
+---
+
+`go-toralizer` checks that your Tor proxy is alive and exits through Tor, then runs a command with its traffic routed through it.
+
+```sh
+go-toralizer exec -- curl -s https://check.torproject.org/api/ip
+```
 
 ## Install
 
@@ -11,41 +29,43 @@
 go install github.com/zvdy/go-toralizer/cmd/go-toralizer@latest
 ```
 
-Or build from source with `make build`. Release binaries are signed with cosign and ship with an SBOM and build provenance attestation.
-
-Requires a running Tor daemon (default `127.0.0.1:9050`; Tor Browser listens on `9150`).
+Or build from source with `make build`. Requires a running Tor daemon (`127.0.0.1:9050`, or `9150` for Tor Browser).
 
 ## Usage
 
 ```sh
-# argv form: no shell involved
-go-toralizer exec -- curl https://check.torproject.org/api/ip
+# argv form, no shell involved
+go-toralizer exec -- curl https://example.com
 
 # shell form
-go-toralizer exec --command "curl -s https://example.com | head"
+go-toralizer exec -c "curl -s https://example.com | head"
+
+# custom proxy, timeout and output file
+go-toralizer exec -p 127.0.0.1:9150 -t 60s -o out.txt -- curl https://example.com
 ```
 
-| Flag | Default | Description |
+| Flag | Default | |
 | --- | --- | --- |
-| `--command`, `-c` | | Shell command line; alternative to argv after `--` |
-| `--proxy`, `-p` | `socks5h://127.0.0.1:9050` | Tor SOCKS5 proxy (`socks5` is upgraded to `socks5h`) |
-| `--timeout`, `-t` | `30s` | Kill the command after this duration (`0` disables) |
-| `--output`, `-o` | | Also write output to a file (created `0600`) |
+| `-c, --command` | | Shell command line, as an alternative to argv after `--` |
+| `-p, --proxy` | `socks5h://127.0.0.1:9050` | Tor SOCKS5 proxy |
+| `-t, --timeout` | `30s` | Kill the command after this long (`0` disables); exits `124` |
+| `-o, --output` | | Also write output to a file (`0600`) |
 | `--mode` | `auto` | `auto`, `env` or `torsocks` |
-| `--skip-verify` | `false` | Skip the check.torproject.org exit verification |
-| `--verbose`, `-v` | `false` | Log execution details to stderr |
+| `--skip-verify` | | Skip the exit-node check |
+| `-v, --verbose` | | Log execution details to stderr |
 
-The command's exit code is propagated.
+The command's exit code is passed through.
 
-## How routing works
+## How it routes
 
-Before running, the proxy is checked with a SOCKS5 handshake and, unless `--skip-verify` is set, a request through it must be confirmed by `check.torproject.org` as a Tor exit.
+| Mode | Behaviour |
+| --- | --- |
+| `torsocks` | Wraps the command with `torsocks`, covering programs that ignore proxy settings. |
+| `env` | Sets `ALL_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY` to a `socks5h://` URL. |
+| `auto` | `torsocks` if installed, otherwise `env` with a warning. |
 
-- `torsocks`: the command is wrapped with `torsocks`, which intercepts socket calls and covers programs that ignore proxy settings.
-- `env`: `ALL_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY` are set to a `socks5h://` URL. Only programs that honour these variables are routed; others connect directly and **can leak your real IP**.
-- `auto`: `torsocks` if installed, otherwise `env` with a warning.
-
-Use `--mode torsocks` when you need a guarantee.
+> [!WARNING]
+> In `env` mode only programs that honour proxy variables are routed. Others connect directly and can leak your real IP. Use `--mode torsocks` when you need a guarantee.
 
 ## Development
 
@@ -55,8 +75,8 @@ make lint   # golangci-lint
 make vuln   # govulncheck
 ```
 
-See [SECURITY.md](SECURITY.md) to report vulnerabilities.
+Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE)
