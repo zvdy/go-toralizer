@@ -1,4 +1,3 @@
 server*
-go.sum
-go-toralizer
-act
+/go-toralizer
+act.claude/
