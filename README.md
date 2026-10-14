@@ -1,107 +1,62 @@
 # go-toralizer
-[![Tor](https://img.shields.io/badge/Tor-7D4698?logo=Tor-Browser&logoColor=white)](#) [![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?&logo=go&logoColor=white)](#)
+
+[![CI](https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml/badge.svg)](https://github.com/zvdy/go-toralizer/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/zvdy/go-toralizer)](https://goreportcard.com/report/github.com/zvdy/go-toralizer)
 
+`go-toralizer` runs a command with its network traffic routed through a local Tor SOCKS proxy.
 
-`go-toralizer` is a CLI tool to run commands through the Tor network. It ensures your commands are executed with the anonymity provided by Tor.
+## Install
 
-## Installation
+```sh
+go install github.com/zvdy/go-toralizer/cmd/go-toralizer@latest
+```
 
-1. **Clone the repository:**
-    ```sh
-    git clone https://github.com/zvdy/go-toralizer.git
-    cd go-toralizer
-    ```
+Or build from source with `make build`. Release binaries are signed with cosign and ship with an SBOM and build provenance attestation.
 
-2. **Build the project:**
-    ```sh
-    go build -o go-toralizer main.go
-    ```
-
-3. **Move the binary to a directory in your PATH:**
-    ```sh
-    sudo mv go-toralizer /usr/local/bin/
-    ```
-
-## Alias Creation
-
-To simplify the usage of `go-toralizer`, you can create an alias in your shell configuration file (e.g., `.bashrc`, `.zshrc`).
-
-1. **Open your shell configuration file:**
-    ```sh
-    nano ~/.bashrc  # or ~/.zshrc for zsh users
-    ```
-
-2. **Add the following line to create an alias:**
-    ```sh
-    alias toralizer='go-toralizer'
-    ```
-      
-      - You can also add the following alias if you want default cli and simpler `cmd` concatenation 
-         ```sh
-         toralizer() {
-            /usr/local/bin/go-toralizer exec --command "$*"
-         }
-
-         # And then you will be able to:
-         toralzier ping website.com
-         ```
-
-3. **Reload your shell configuration:**
-    ```sh
-    source ~/.bashrc  # or ~/.zshrc for zsh users
-    ```
+Requires a running Tor daemon (default `127.0.0.1:9050`; Tor Browser listens on `9150`).
 
 ## Usage
 
-### Basic Command Execution
-
-To execute a command through Tor, use the `exec` command with the `--command` flag:
-
 ```sh
-toralizer exec --command "curl http://example.com"
+# argv form: no shell involved
+go-toralizer exec -- curl https://check.torproject.org/api/ip
+
+# shell form
+go-toralizer exec --command "curl -s https://example.com | head"
 ```
 
-### Verbose Output
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--command`, `-c` | | Shell command line; alternative to argv after `--` |
+| `--proxy`, `-p` | `socks5h://127.0.0.1:9050` | Tor SOCKS5 proxy (`socks5` is upgraded to `socks5h`) |
+| `--timeout`, `-t` | `30s` | Kill the command after this duration (`0` disables) |
+| `--output`, `-o` | | Also write output to a file (created `0600`) |
+| `--mode` | `auto` | `auto`, `env` or `torsocks` |
+| `--skip-verify` | `false` | Skip the check.torproject.org exit verification |
+| `--verbose`, `-v` | `false` | Log execution details to stderr |
 
-Enable verbose output to see more details about the execution:
+The command's exit code is propagated.
 
-```sh
-toralizer exec --command "curl http://example.com" --verbose
-```
+## How routing works
 
-### Specify Timeout
+Before running, the proxy is checked with a SOCKS5 handshake and, unless `--skip-verify` is set, a request through it must be confirmed by `check.torproject.org` as a Tor exit.
 
-Set a custom timeout for the command execution:
+- `torsocks`: the command is wrapped with `torsocks`, which intercepts socket calls and covers programs that ignore proxy settings.
+- `env`: `ALL_PROXY`, `HTTP_PROXY` and `HTTPS_PROXY` are set to a `socks5h://` URL. Only programs that honour these variables are routed; others connect directly and **can leak your real IP**.
+- `auto`: `torsocks` if installed, otherwise `env` with a warning.
 
-```sh
-toralizer exec --command "curl http://example.com" --timeout 60s
-```
+Use `--mode torsocks` when you need a guarantee.
 
-### Custom Proxy Address
-
-Use a custom proxy address instead of the default `socks5://127.0.0.1:9050`:
-
-```sh
-toralizer exec --command "curl http://example.com" --proxy "socks5://127.0.0.1:9150"
-```
-
-### Redirect Output to a File
-
-Redirect the command output to a file:
+## Development
 
 ```sh
-toralizer exec --command "curl http://example.com" --output output.txt
+make test   # go test -race -cover ./...
+make lint   # golangci-lint
+make vuln   # govulncheck
 ```
 
-## Example
-
-```sh
-toralizer exec --command "curl http://example.com" --verbose --timeout 45s --proxy "socks5://127.0.0.1:9150" --output result.txt
-```
-
-This command will execute `curl http://example.com` through the Tor network with verbose output, a timeout of 45 seconds, using a custom proxy address, and redirect the output to `result.txt`.
+See [SECURITY.md](SECURITY.md) to report vulnerabilities.
 
 ## License
 
-This project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).
